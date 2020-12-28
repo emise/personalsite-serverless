@@ -17,17 +17,33 @@ s3 = boto3.resource(
     aws_secret_access_key=settings.AWS_SERVER_SECRET_KEY,
 )
 S3_BUCKET = s3.Bucket(BUCKET_NAME)
+ORIGIN_ALLOWLIST = [
+    'https://liuangela.com',
+    'https://www.liuangela.com',
+]
 
-CORS_HEADER = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Credentials': True,
-}
+
+def _get_cors_header(origin_header):
+    if origin_header in ORIGIN_ALLOWLIST:
+        return {
+            "Access-Control-Allow-Credentials": True,
+            "Access-Control-Allow-Origin": origin_header,
+        }
+    return None
 
 
 def get_photos(event, context):
     """
     Get all available photoshoots
     """
+    origin_header = event.get('headers', {}).get('origin')
+    cors_header = _get_cors_header(origin_header)
+    if not cors_header:
+        return {
+            "statusCode": 405,
+            "error": "Cross origin request not allowed",
+        }
+
     # get photoshoot names
     folder_names = []
     for obj in S3_BUCKET.objects.all():
@@ -38,7 +54,7 @@ def get_photos(event, context):
     return {
         "statusCode": 200,
         "body": json.dumps({'data': folder_names}),
-        "headers": CORS_HEADER,
+        "headers": cors_header,
     }
 
 
@@ -46,6 +62,14 @@ def get_photoshoot(event, context):
     """
     Fetch all photos from a specific photoshoot
     """
+    origin_header = event.get('headers', {}).get('origin')
+    cors_header = _get_cors_header(origin_header)
+    if not cors_header:
+        return {
+            "statusCode": 405,
+            "error": "Cross origin request not allowed",
+        }
+
     photoshoot_name = parse_url.unquote(event.get('pathParameters', {}).get('photoshoot'))
     if not photoshoot_name:
         return {
@@ -71,18 +95,26 @@ def get_photoshoot(event, context):
             'data': thumbnail_urls,
             'description': description,
         }),
-        "headers": CORS_HEADER,
+        "headers": cors_header,
     }
 
 
 def send_email(event, context):
     """Send an email to the inquire address via frontend contact form to prevent spam."""
+    origin_header = event.get('headers', {}).get('origin')
+    cors_header = _get_cors_header(origin_header)
+    if not cors_header:
+        return {
+            "statusCode": 405,
+            "error": "Cross origin request not allowed",
+        }
+
     json_data = event.get('body')
     if not json_data:
         return {
             "statusCode": 400,
             "error": "No data in message body",
-            "headers": CORS_HEADER,
+            "headers": cors_header,
         }
 
     data = json.loads(json_data)
@@ -129,11 +161,11 @@ def send_email(event, context):
         return {
             'statusCode': 500,
             'error': json.dumps(e),
-            'headers': CORS_HEADER,
+            'headers': cors_header,
         }
 
     return {
         'statusCode': 200,
         'body': json.dumps({'data': 'success!'}),
-        'headers': CORS_HEADER,
+        'headers': cors_header,
     }
