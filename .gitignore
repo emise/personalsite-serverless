@@ -13,4 +13,3 @@ __pycache__
 
 # serverless
 .serverless/
-serverless.yml
