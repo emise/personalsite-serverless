@@ -2,7 +2,7 @@
 
 [liuangela.com](https://liuangela.com)
 
-This is a serverless implementation of my personal website. It uses AWS Lambda functions to handle server-side work, and the ReactJS frontend is hosted in S3.
+This is a serverless implementation of my personal website. It uses AWS Lambda functions to handle server-side work, and S3 to store the static ReactJS frontend.
 
 The architecture is:
 
@@ -14,6 +14,13 @@ Content updates can be made via:
 - uploading photos to the right bucket in S3
 - adding text to the allWords.js file
 
+### APIs
+
+- fetch all photoshoots
+- fetch images from a specific photoshoot
+- send email via contact form
+
+All endpoints are rate limited.
 
 ## Development
 
